@@ -1,0 +1,53 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-configmap-1
+data:
+  FIRST_NAME: "Jackson"
+  LAST_ANME: "GOT7"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-configmap-2
+data:
+  application.properties: |
+    s3bucket=sample-bucket
+    region=ap-southeast-1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tester
+  labels:
+    app: tester
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tester
+  template:
+    metadata:
+      labels:
+        app: tester
+    spec:
+      containers:
+      - name: tester
+        image: selfieblue/connection-tester:centos8
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+        volumeMounts:
+        - name: config1
+          mountPath: /etc/config/config_1
+        - name: config2
+          mountPath: /etc/config/config_2
+      volumes:
+      - name: config1
+        configMap:
+          name: sample-configmap-1
+      - name: config2
+        configMap:
+          name: sample-configmap-2
